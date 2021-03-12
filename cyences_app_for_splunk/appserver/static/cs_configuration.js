@@ -215,33 +215,6 @@ require([
 
     getHoneyDBConfiguration();
 
-
-    function getMaliciousIPCollectorConfiguration(){
-        let service = mvc.createService();
-        service.get("/MaliciousIPConfiguration", {}, function(error, response){
-            if(response && response.data.entry[0].content && response.data.entry[0].content['api_url'] && response.data.entry[0].content['auth_token'] != ''){
-                response = response.data.entry[0].content;
-                $("#malicious_ip_api_url").val(response['api_url']);
-                $("#malicious_ip_auth_token").val(response['auth_token']);
-            }
-            else if(response && response.data.entry[0].content['error'] && response.data.entry[0].content['error'] != ''){
-                let msg_location = "#malicious_ip_msg";
-                $(msg_location).addClass('error_msg');
-                $(msg_location).removeClass('success_msg');
-                $(msg_location).text(`Unable to get the API URL and Auth Token, may be there is no configuration. Please set the configuration and save.`);
-            }
-            else if(error && error['error']){
-                console.log(`Error while getting MaliciousIP Collector Configuration: ${error['error']}`);
-            }
-            else{
-                console.log("Unknown error while getting MaliciousIP Collector Auth Token.");
-            }
-        });
-    }
-
-    getMaliciousIPCollectorConfiguration();
-
-
     function updateHoneyDBConfiguration(){
         let api_id = $("#honeydb_api_id").val();
         let api_key = $("#honeydb_api_key").val();
@@ -277,6 +250,32 @@ require([
         updateHoneyDBConfiguration();
     });
 
+
+    function getMaliciousIPCollectorConfiguration(){
+        let service = mvc.createService();
+        service.get("/MaliciousIPConfiguration", {}, function(error, response){
+            if(response && response.data.entry[0].content && response.data.entry[0].content['api_url'] && response.data.entry[0].content['auth_token'] != ''){
+                response = response.data.entry[0].content;
+                $("#malicious_ip_api_url").val(response['api_url']);
+                $("#malicious_ip_auth_token").val(response['auth_token']);
+            }
+            else if(response && response.data.entry[0].content['error'] && response.data.entry[0].content['error'] != ''){
+                let msg_location = "#malicious_ip_msg";
+                $(msg_location).addClass('error_msg');
+                $(msg_location).removeClass('success_msg');
+                $(msg_location).text(`Unable to get the API URL and Auth Token, may be there is no configuration. Please set the configuration and save.`);
+            }
+            else if(error && error['error']){
+                console.log(`Error while getting MaliciousIP Collector Configuration: ${error['error']}`);
+            }
+            else{
+                console.log("Unknown error while getting MaliciousIP Collector Auth Token.");
+            }
+        });
+    }
+
+    getMaliciousIPCollectorConfiguration();
+
     
     function updateMaliciousIPConfiguration(){
         let api_url = $("#malicious_ip_api_url").val();
@@ -311,5 +310,69 @@ require([
 
     $(`#malicious_button`).on("click", function(){
         updateMaliciousIPConfiguration();
+    });
+
+    
+    function getLansweeperScanConfiguration(){
+        let service = mvc.createService();
+        service.get("/LansweeperScanConfiguration", {}, function(error, response){
+            // TODO - Need to update this function
+            if(response && response.data.entry[0].content && response.data.entry[0].content['api_url'] && response.data.entry[0].content['password'] != ''){
+                response = response.data.entry[0].content;
+                $("#lansweeper_scan_api_url").val(response['api_url']);
+                $("#lansweeper_scan_password").val(response['password']);
+            }
+            else if(response && response.data.entry[0].content['error'] && response.data.entry[0].content['error'] != ''){
+                let msg_location = "#lansweeper_scan_msg";
+                $(msg_location).addClass('error_msg');
+                $(msg_location).removeClass('success_msg');
+                $(msg_location).text(`Unable to get the API URL and Password, may be there is no configuration. Please set the configuration and save.`);
+            }
+            else if(error && error['error']){
+                console.log(`Error while getting Lansweeper configuration: ${error['error']}`);
+            }
+            else{
+                console.log("Unknown error while getting Lansweeper configuration.");
+            }
+        });
+    }
+
+    getLansweeperScanConfiguration();
+
+    
+    function updateLansweeperScanConfiguration(){
+        // TODO - Need to update this function
+        let api_url = $("#lansweeper_scan_api_url").val();
+        let password = $("#lansweeper_scan_password").val();
+        let service = mvc.createService();
+        let data = {
+            "api_url": api_url,
+            "password": password
+        };
+        data = JSON.stringify(data);
+        service.post("/LansweeperScanConfiguration/lansweeper_scan", {"data": data}, function(error, response){
+            if(response && response.data.entry[0].content['success'] && response.data.entry[0].content['success'] != ''){
+                let msg_location = "#lansweeper_scan_msg";
+                $(msg_location).removeClass('error_msg');
+                $(msg_location).addClass('success_msg');
+                $(msg_location).text("Lansweeper configuration saved successfully.");
+            }
+            else if(response && response.data.entry[0].content['error'] && response.data.entry[0].content['error'] != ''){
+                let msg_location = "#lansweeper_scan_msg";
+                $(msg_location).addClass('error_msg');
+                $(msg_location).removeClass('success_msg');
+                $(msg_location).text(`Unable to save the Lansweeper configuration. ${response.data.entry[0].content['error']}`);
+            }
+            else if(error && error['error']){
+                console.log(`Error while getting Lansweeper configuration: ${error['error']}`);
+            }
+            else{
+                console.log("Unknown error while getting Lansweeper configuration.");
+            }
+        });
+    }
+
+    $(`#lansweeper_scan_button`).on("click", function(){
+        updateLansweeperScanConfiguration();
     });
 });

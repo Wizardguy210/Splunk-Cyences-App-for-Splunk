@@ -50,6 +50,31 @@
   </row>
   <row>
     <panel>
+      <title>Configuration for Lansweeper Scan</title>
+      <html>
+        <p id="lansweeper_scan_msg"/>
+        <table style="width:60%">
+        <!-- TODO - Need to update below block of code -->
+          <tr>
+            <th style="text-align:left">API URL</th>
+            <th style="text-align:left">
+              <input type="text" id="lansweeper_scan_api_url" style="margin-bottom:5px;"/>
+            </th>
+            <th style="text-align:left">Password</th>
+            <th style="text-align:left">
+              <input type="password" id="lansweeper_scan_password"/>
+            </th>
+            <th style="text-align:left">
+              <button id="lansweeper_scan_button">Save</button>
+            </th>
+          </tr>
+        </table>
+        <div>*Re-enter the password before clicking Save.</div>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <title>Macro Definitions Update</title>
       <html/>
     </panel>

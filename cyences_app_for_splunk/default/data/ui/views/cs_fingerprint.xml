@@ -1,0 +1,44 @@
+<form theme="dark" script="cs_fingerprint.js">
+  <label>Fingerprint</label>
+  <fieldset submitButton="false">
+    <input type="text" token="tkn_ip">
+      <label>IP Address</label>
+      <default></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>From Device Master Table</title>
+      <table>
+        <search>
+          <query>| inputlookup cs_device_master_table | search ip=$tkn_ip|s$
+| eval lansweeper_os =AssetType." ".OSVersion." ".AssetVersion | eval os=coalesce(tenable_os, QUALYS_OS, lansweeper_os)
+| eval mac_address=mvappend(lansweeper_mac_address, crowdstrike_mac_address)
+| eval user=mvappend(lansweeper_user, sophos_user, crowdstrike_user)
+| eval lansweeper_status=case(isnull(lansweeper_last_event), "-", 1==1, AssetState)
+| eval qualys_status=case(isnull(qualys_last_event), "-", ACTIVE_SEVERITY_5&gt;0, "Red", ACTIVE_SEVERITY_4&gt;0, "Orange", ACTIVE_SEVERITY_3&gt;0, "Yellow", 1==1, "Green")
+| eval tenable_status=case(isnull(tenable_last_event), "-", critical_active_vuln&gt;0, "Red", high_active_vuln&gt;0, "Orange", medium_active_vuln&gt;0, "Yellow", 1==1, "Green")
+| eval defender_status=case(isnull(defender_last_event), "-", 1==1, RTP_state)
+| eval sophos_status=if(isnull(sophos_last_event), "-", sophos_status)
+| eval crowdstrike_status=if(isnull(crowdstrike_last_event), "-", "Present")
+| table host, ip, *
+| fields - _key, *_last_event | transpose | rename column as Field, "row 1" as Value | table Field, Value | search Value=*</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">100</option>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">false</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Scan with Lansweeper</title>
+      <html>
+        <button id="btn_lansweeper_scan">Scan $tkn_ip$</button><div id="loading_div"></div>
+        <div id="lansweeper_fingerprint_info"></div>
+      </html>
+    </panel>
+  </row>
+</form>
