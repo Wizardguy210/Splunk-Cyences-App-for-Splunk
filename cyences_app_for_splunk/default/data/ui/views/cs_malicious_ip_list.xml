@@ -4,7 +4,7 @@
     <query>| inputlookup cs_malicious_ip_list.csv
 | addinfo | where (info_min_time="-Infinity" OR last_seen&gt;=info_min_time) AND (info_max_time="+Infinity" OR last_seen&lt;=info_max_time)
 | `cs_human_readable_time_format(last_seen)` 
-| table ip, last_seen, ip_location, description  | fillnull value="-" description,ip_location</query>
+| table ip, category, ip_location, last_seen, no_of_affected_devices, no_of_hits | eval description=case(category="outbound", "Outgoing Traffic to Blocked IP", category="inbound", "Incoming Traffic from Blocked IP", category="ddos", "Involved in DDoS Attack") | fillnull value="-" description, ip_location | fields - category</query>
     <earliest>$tkn_last_seen.earliest$</earliest>
     <latest>$tkn_last_seen.latest$</latest>
   </search>
@@ -56,8 +56,7 @@
       <title>Malicious IPs on Map</title>
       <map>
         <search base="search_list">
-          <query>| eval description=case(description="Incoming traffic into multiple firewalls from this blocked IP", "Incoming Traffic from Blocked IP", description="Outgoing traffic through multiple firewalls to this blocked IP", "Outgoing Traffic to Blocked IP", description="Involved in DDoS Attack", "DDoS", 1==1, "Other")
-| iplocation ip | geostats globallimit=0 count by description</query>
+          <query>| iplocation ip | geostats globallimit=0 count by description</query>
         </search>
         <option name="drilldown">all</option>
         <option name="mapping.type">marker</option>

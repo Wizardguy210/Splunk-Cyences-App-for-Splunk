@@ -10,7 +10,7 @@ import cs_utils
 
 
 
-HEADERS = ['description','ip','ip_location','last_seen']
+HEADERS = ['ip','category','ip_location','last_seen','no_of_affected_devices','no_of_hits']
 LOOKUP_NAME = 'cs_malicious_ip_list.csv'
 CONF_FILE = 'cs_configurations'
 
@@ -30,16 +30,15 @@ class UpdateMaliciousIPLookup(GeneratingCommand):
         for i in data:
             if i['name'] == 'maliciousip':
                 api_url = i['content']['api_url']
-                cust_id = i['content']['cust_id']
                 auth_token = cs_utils.CredentialManager(sessionKey).get_credential(api_url)
                 break
-        return {'api_url': api_url, 'auth_token': auth_token, 'cust_id': cust_id}
+        return {'api_url': api_url, 'auth_token': auth_token}
 
     def request_malicious_ips(self, api_config):
         auth_header = {
             "Authorization": "Bearer {}".format(api_config['auth_token'])
         }
-        response = requests.get("{}{}".format(api_config['api_url'].rstrip('/'), '/api/v1/ip'), headers=auth_header)
+        response = requests.get("{}{}".format(api_config['api_url'].rstrip('/'), '/api/v1/firewall_mal_ips/list'), headers=auth_header)
         return response.json()['data']
 
 
@@ -47,10 +46,12 @@ class UpdateMaliciousIPLookup(GeneratingCommand):
         self.logger.info("Converting data to csv lookup format.")
         return [
             [
-                '{}'.format(i['description']),
                 '{}'.format(i['ip']),
+                '{}'.format(i['category']),
                 '{}'.format(i['ip_location']),
-                '{}'.format(i['last_seen'])
+                '{}'.format(i['last_seen']),
+                '{}'.format(i['no_of_affected_devices']),
+                '{}'.format(i['no_of_hits'])
             ]
             for i in data
         ]
@@ -72,7 +73,8 @@ class UpdateMaliciousIPLookup(GeneratingCommand):
         api_config = self.get_api_info()
 
         if not api_config['api_url'] or not api_config['auth_token']:
-            self.logger.info("MaliciousIP Collector Configuration not found in the cs_configurations.conf file.")
+            self.logger.error("MaliciousIP Collector Configuration not found in the cs_configurations.conf file.")
+            raise Exception("API URL and Authentication Token not set. Please navigate to Cyences App > Configuration page to do so.")
 
         # request for data
         if self.generate_events or self.update_lookup:

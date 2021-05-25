@@ -25,10 +25,9 @@ class MaliciousIPUploaderCommand(EventingCommand):
         for i in data:
             if i['name'] == 'maliciousip':
                 api_url = i['content']['api_url']
-                cust_id = i['content']['cust_id']
                 auth_token = cs_utils.CredentialManager(sessionKey).get_credential(api_url)
                 break
-        return {'api_url': api_url, 'auth_token': auth_token, 'cust_id': cust_id}
+        return {'api_url': api_url, 'auth_token': auth_token}
     
 
     def transform(self, records):
@@ -36,22 +35,20 @@ class MaliciousIPUploaderCommand(EventingCommand):
         api_config = self.get_api_info()
 
         if not api_config['api_url'] or not api_config['auth_token']:
-            self.logger.info("MaliciousIP Collector Configuration not found in the cs_configurations.conf file.")
+            self.logger.error("MaliciousIP Collector Configuration not found in the cs_configurations.conf file.")
+            raise Exception("API URL and Authentication Token not set. Please navigate to Cyences App > Configuration page to do so.")
 
         for record in records:
             api_payload.append(
                 {
                     'ip': record['ip'],
                     'ip_location': ','.join(record['ip_location']) if type(record['ip_location']) == list else str(record['ip_location']),
-                    'device_name': ','.join(record['dvc_name']) if type(record['dvc_name']) == list else str(record['dvc_name']),
                     'device': ','.join(record['dvc']) if type(record['dvc']) == list else str(record['dvc']),
-                    'no_of_ports_used': int(record['no_of_ports_used']),
-                    'no_of_victims': int(record['no_of_victims']),
-                    'customer_id': api_config['cust_id'],
-                    'category': record['ip_category'],
+                    'category': str(record['ip_category']),
+                    'last_seen': float(record['last_seen']),
                 }
             )
-        endpoint_url = "{}/api/v1/ip".format(api_config['api_url'].rstrip('/'))
+        endpoint_url = "{}/api/v1/firewall_mal_ips/add".format(api_config['api_url'].rstrip('/'))
         payload = {'data': api_payload}
         auth_header = {
             "Authorization": "Bearer {}".format(api_config['auth_token'])

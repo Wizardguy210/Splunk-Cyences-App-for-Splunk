@@ -378,7 +378,7 @@
         <search>
           <query>| inputlookup cs_malicious_ip_list.csv
 | `cs_human_readable_time_format(last_seen)` 
-| table ip, last_seen, ip_location, description</query>
+| table ip, category, ip_location, last_seen, no_of_affected_devices, no_of_hits | eval description=case(category="outbound", "Outgoing Traffic to Blocked IP", category="inbound", "Incoming Traffic from Blocked IP", category="ddos", "Involved in DDoS Attack") | fillnull value="-" description, ip_location | fields - category</query>
           <earliest>0</earliest>
           <latest></latest>
         </search>
