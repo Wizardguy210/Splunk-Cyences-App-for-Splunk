@@ -4,6 +4,10 @@
 []
 access = read : [ * ], write : [ admin, power ]
 
+### Alert ACtions ###
+[alert_actions]
+export = system
+
 ### EVENT TYPES & TAGS
 
 [eventtypes]
