@@ -1,0 +1,396 @@
+<form theme="dark">
+  <label>Log4J Analysis</label>
+  <fieldset submitButton="false">
+    <input type="time" token="timeRange">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>All Other Events</title>
+      <event>
+        <search>
+          <query>(index=* ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")) OR
+(index=qualys ("376160" OR "730297" OR "376157" OR "150440" OR "45514" OR "48199" OR "178935" OR "178934" OR "317118" OR "317114" OR "317117" OR "317115" OR "690737" OR "376160" OR "376187"))
+NOT (sourcetype="o365:management:activity" Workload="Exchange") NOT (sourcetype="ms:o365:reporting:messagetrace") NOT (index=o365 source="*message_trace.csv") NOT (sourcetype="o365:management:activity" Workload="Onedrive")
+NOT (sourcetype="mimecastsiemst")
+NOT (index=* sourcetype="pan:threat")
+NOT (index=* sourcetype="tenable:*") NOT (index=tenable) NOT (index=nessus)
+NOT (index=epintel) NOT (index IN (windows, wineventlog, msad) EventCode=4688) NOT (sourcetype="WinHostMon" source="process")
+NOT (index=cyences search_name="Palo Alto Firewall*")
+NOT (index=dns) NOT (index=msad sourcetype="MSAD:NT6:DNS")
+NOT (index=iis) NOT (sourcetype="ms:iis:auto")
+NOT (sourcetype="MSAD:NT6:Netlogon")
+NOT (sourcetype="linux:audit" "log4j")
+NOT (sourcetype="prod")
+NOT (sourcetype="CWService")
+NOT (index=trendmicro)
+NOT (sourcetype="Script:InstalledApps")
+NOT (sourcetype="ECC_LOGS")
+NOT (sourcetype="oracle:audit:text")
+NOT (source IN ("/var/log/nginx/*", "/var/log/httpd/*", "/u01/*-tomcat-*/logs/localhost_access_log*"))
+NOT (sourcetype=linux_secure)
+NOT ( sourcetype="backendless-apache") NOT (sourcetype=*opendns*)
+NOT (sourcetype="cisco:ios") NOT (index=f5) NOT (index=estreamer) NOT (index=wsa) NOT index=esa NOT sourcetype=unix:update</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="list.drilldown">none</option>
+        <option name="list.wrap">1</option>
+        <option name="maxLines">5</option>
+        <option name="raw.drilldown">full</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">0</option>
+        <option name="table.drilldown">all</option>
+        <option name="table.sortDirection">asc</option>
+        <option name="table.wrap">1</option>
+        <option name="type">list</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Palo Alto Threats</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="pan:threat"
+| stats values(splunk_server), values(app), count values(dvc), values(dvc_name), values(user), values(src), values(src_port) as src_ports, values(src_location), values(dest), values(dest_port), values(dest_translated_ip), values(dest_translated_port) by log_subtype, severity, threat_category, threat, action
+| eval src_ports=mvindex(src_ports, 0, 4)</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Tenable Vulnerabilities</title>
+      <table>
+        <search>
+          <query>((index=* sourcetype="tenable:*:vuln" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")) OR  ((index=nessus OR index=tenable) ("156000" OR "156001" OR "155998" OR "155999" OR "156002" OR "156014" OR "113075" OR "156015" OR "156016" OR "156017" OR "156018" OR "156021" OR "156026" OR "156035" OR "156052" OR "156054" OR "156056" OR "156078" OR "113076" OR "156061" OR "156104" OR "156112" OR "156115" OR "156124" OR "156132" OR "156139" OR "156145" OR "156146" OR "156150" OR "156153" OR "156157")))
+ vul_severity!="informational"
+| eval asset_fqdn=coalesce(asset_fqdn, ip)
+| stats last(ipv4) as ipv4, latest(vul_state) as vul_state, values(plugin_family) as plugin_family, values(has_patch) as has_patch, values(port) as port, values(protocol) as protocol, values(risk_factor) as risk_factor, values(cve) as cve, values(solution) as solution, values(vul_type) as vul_type, values(vul_version) as vul_version, values(description) as description, values(synopsis) as synopsis, latest(last_fixed) as last_fixed, latest(last_found) as last_found, values(cpe) as cpe, values(in_the_news) as in_the_news by vul_id, vul_name, vul_severity, asset_fqdn
+| where vul_state!="fixed"
+| stats list(ipv4), list(asset_fqdn), list(vul_state), values(plugin_family), values(has_patch), values(port), values(protocol), values(risk_factor), values(cve), values(solution), values(vul_type), values(vul_version), values(description), values(synopsis), max(last_fixed), max(last_found), values(cpe), values(in_the_news) by vul_id, vul_name, vul_severity</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Tenable Vulnerabilities Plugins</title>
+      <table>
+        <search>
+          <query>(index=* sourcetype="tenable:*:plugin" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")) OR  ((index=nessus OR index=tenable) ("156000" OR "156001" OR "155998" OR "155999" OR "156002" OR "156014" OR "113075" OR "156015" OR "156016" OR "156017" OR "156018" OR "156021" OR "156026" OR "156035" OR "156052" OR "156054" OR "156056" OR "156078" OR "113076" OR "156061" OR "156104" OR "156112" OR "156115" OR "156124" OR "156132" OR "156139" OR "156145" OR "156146" OR "156150" OR "156153" OR "156157"))
+| stats values(splunk_server), values(ipv4), values(asset_fqdn), values(vul_state), values(plugin_family), values(has_patch), values(port), values(protocol), values(risk_factor), values(cve), values(solution), values(vul_type), values(vul_version), values(description), values(synopsis), values(last_fixed), values(last_found), values(cpe), values(in_the_news) by vul_id, vul_name, vul_severity</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Nessus - Vulnerabilities</title>
+      <table>
+        <search>
+          <query>(index=nessus ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")) OR  (index=nessus ("156000" OR "156001" OR "155998" OR "155999" OR "156002" OR "156014" OR "113075" OR "156015" OR "156016" OR "156017" OR "156018" OR "156021" OR "156026" OR "156035" OR "156052" OR "156054" OR "156056" OR "156078" OR "113076" OR "156061" OR "156104" OR "156112" OR "156115" OR "156124" OR "156132" OR "156139" OR "156145" OR "156146" OR "156150" OR "156153" OR "156157")) | rename "host-ip" as ip
+| stats values(splunk_server), values(ip), values(hostname), values(vul_state), values(vul_has_patch), values(vul_risk_factor), values(vul_cve), values(vul_solution), values(vul_type), values(vul_description), values(vul_synopsis), values(vul_cpe), values(vul_in_the_news) by vul_id, vul_name, vul_severity</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>MSAD:NT6:Netlogon</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="MSAD:NT6:Netlogon" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Sysmon - Commands being executed and Files being created</title>
+      <table>
+        <search>
+          <query>index=epintel  ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")
+| stats count, values(CommandLine), values(ParentCommandLine), values(TargetFilename) by EventCode, host</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>TrendMicro</title>
+      <table>
+        <search>
+          <query>(index=trendmicro ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell"))
+| rename "endpoint.name" as endpoint
+| fillnull description, severity value="-"
+| stats count, values(endpoint) by description, severity
+| sort - count</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>DNS Logs</title>
+      <table>
+        <search>
+          <query>((index=dns) OR (index=msad sourcetype="MSAD:NT6:DNS") OR (index=* sourcetype=*opendns*)) ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")
+| fillnull query value="-"
+| eval query=replace(query, "\((\d+)\)log4shell-(\w+)-\w+\((\d+)\)r\((\d+)\)nessus\((\d+)\)org\((\d+)\)", "($$1)log4shell-&lt;protocol&gt;-&lt;some-characters&gt;($$3)r($$4)nessus($$5)org($$6)")
+| stats count, values(src) as src, values(action) as action, values(questiontype) as questiontype, values(reply_code) as reply_code, values(response) as response by query
+| sort - count</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>IIS Logs</title>
+      <event>
+        <search>
+          <query>((index=iis) OR (sourcetype="ms:iis:auto")) ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <event>
+        <title>Windows - Installed Apps Logs</title>
+        <search>
+          <query>index=* sourcetype="Script:InstalledApps" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")
+| dedup host, InstallSource</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Oracle Audit Logs</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="oracle:audit:text" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Other Access Logs (Nginx &amp; httpd)</title>
+      <event>
+        <search>
+          <query>index=* source IN ("/var/log/nginx/*", "/var/log/httpd/*", "/u01/*-tomcat-*/logs/localhost_access_log*") ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>linux_secure</title>
+      <event>
+        <search>
+          <query>index=* sourcetype=linux_secure ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Cisco:ios</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="cisco:ios" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Backendless-Apache</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="backendless-apache" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Datacard Host - Sourcetype="CWService"</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="CWService" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")
+| dedup _raw, host</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>ECC Logs</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="ECC_LOGS" ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Mule ldap jndi logger</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="prod" logger="org.mule.module.ldap.api.jndi.LDAPJNDIConnection"
+| dedup host, _raw</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Mule other logs</title>
+      <event>
+        <search>
+          <query>index=* sourcetype="prod" NOT logger="org.mule.module.ldap.api.jndi.LDAPJNDIConnection"</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Estreamer</title>
+      <event>
+        <search>
+          <query>index=estreamer ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")  NOT firefox</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>F5</title>
+      <event>
+        <search>
+          <query>index=f5  NOT "action=blocked"  ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>WSA</title>
+      <event>
+        <search>
+          <query>("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")  index=wsa</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Unix Updates</title>
+      <table>
+        <search>
+          <query>index=* sourcetype=unix:update  ("2021-44228" OR "2021-45046" OR "Log4j" OR "Log4Shell" OR "jndi")| stats count values(host) as host by package package_type | sort - count</query>
+          <earliest>$timeRange.earliest$</earliest>
+          <latest>$timeRange.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
